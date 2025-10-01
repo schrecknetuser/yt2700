@@ -9,6 +9,7 @@ import AddTracksScreen from '../screens/AddTracksScreen';
 import NowPlayingScreen from '../screens/NowPlayingScreen';
 import AuthorDetailScreen from '../screens/AuthorDetailScreen';
 import PlaylistDetailScreen from '../screens/PlaylistDetailScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 
 export type RootStackParamList = {
   Main: undefined;
@@ -20,6 +21,7 @@ export type RootStackParamList = {
 export type MainTabParamList = {
   Library: undefined;
   NowPlaying: undefined;
+  Settings: undefined;
 };
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -37,6 +39,11 @@ const MainTabs = () => {
         name="NowPlaying" 
         component={NowPlayingScreen}
         options={{ title: 'Now Playing' }}
+      />
+      <Tab.Screen 
+        name="Settings" 
+        component={SettingsScreen}
+        options={{ title: 'Settings' }}
       />
     </Tab.Navigator>
   );

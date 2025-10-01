@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Track, Author, Playlist, PlaybackState } from '../models/Track';
 import { StorageService } from '../services/StorageService';
+import { AudioService } from '../services/AudioService';
 
 interface MusicContextType {
   tracks: Track[];
@@ -56,8 +57,13 @@ export const MusicProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   });
 
   useEffect(() => {
+    initializeAudio();
     loadData();
   }, []);
+
+  const initializeAudio = async () => {
+    await AudioService.initialize();
+  };
 
   const loadData = async () => {
     const [loadedTracks, loadedAuthors, loadedPlaylists, lastPlayedId] = await Promise.all([
@@ -135,15 +141,34 @@ export const MusicProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return shuffled;
   };
 
-  const playTrack = (track: Track) => {
-    setPlaybackState(prev => ({
-      ...prev,
-      currentTrack: track,
-      queue: [track],
-      position: 0,
-      isPlaying: true,
-    }));
-    StorageService.saveLastPlayedTrack(track.id);
+  const playTrack = async (track: Track) => {
+    try {
+      await AudioService.playTrack(track, (status) => {
+        if (status.isLoaded) {
+          setPlaybackState(prev => ({
+            ...prev,
+            position: status.positionMillis / 1000,
+            isPlaying: status.isPlaying,
+          }));
+
+          // Auto-play next track when current finishes
+          if (status.didJustFinish) {
+            nextTrack();
+          }
+        }
+      });
+
+      setPlaybackState(prev => ({
+        ...prev,
+        currentTrack: track,
+        queue: [track],
+        position: 0,
+        isPlaying: true,
+      }));
+      StorageService.saveLastPlayedTrack(track.id);
+    } catch (error) {
+      console.error('Error playing track:', error);
+    }
   };
 
   const playNext = (track: Track) => {
@@ -157,82 +182,67 @@ export const MusicProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     });
   };
 
-  const playTracks = (tracksToPlay: Track[], shuffle = false) => {
+  const playTracks = async (tracksToPlay: Track[], shuffle = false) => {
     const queue = shuffle ? shuffleArray(tracksToPlay) : tracksToPlay;
-    setPlaybackState(prev => ({
-      ...prev,
-      currentTrack: queue[0],
-      queue,
-      position: 0,
-      isPlaying: true,
-      isShuffled: shuffle,
-    }));
     if (queue[0]) {
-      StorageService.saveLastPlayedTrack(queue[0].id);
+      await playTrack(queue[0]);
+      setPlaybackState(prev => ({
+        ...prev,
+        queue,
+        isShuffled: shuffle,
+      }));
     }
   };
 
-  const pausePlayback = () => {
+  const pausePlayback = async () => {
+    await AudioService.pause();
     setPlaybackState(prev => ({ ...prev, isPlaying: false }));
   };
 
-  const resumePlayback = () => {
+  const resumePlayback = async () => {
+    await AudioService.resume();
     setPlaybackState(prev => ({ ...prev, isPlaying: true }));
   };
 
-  const nextTrack = () => {
-    setPlaybackState(prev => {
-      const currentIndex = prev.queue.findIndex(t => t.id === prev.currentTrack?.id);
-      let nextIndex = currentIndex + 1;
-      
-      if (nextIndex >= prev.queue.length) {
-        if (prev.isRepeating) {
-          const newQueue = prev.isShuffled ? shuffleArray(prev.queue) : prev.queue;
-          nextIndex = 0;
-          const nextTrack = newQueue[nextIndex];
-          if (nextTrack) {
-            StorageService.saveLastPlayedTrack(nextTrack.id);
-          }
-          return {
+  const nextTrack = async () => {
+    const currentIndex = playbackState.queue.findIndex(t => t.id === playbackState.currentTrack?.id);
+    let nextIndex = currentIndex + 1;
+    
+    if (nextIndex >= playbackState.queue.length) {
+      if (playbackState.isRepeating) {
+        const newQueue = playbackState.isShuffled ? shuffleArray(playbackState.queue) : playbackState.queue;
+        const nextTrack = newQueue[0];
+        if (nextTrack) {
+          await playTrack(nextTrack);
+          setPlaybackState(prev => ({
             ...prev,
             queue: newQueue,
-            currentTrack: newQueue[nextIndex],
-            position: 0,
-          };
-        } else {
-          return { ...prev, isPlaying: false };
+          }));
         }
+      } else {
+        await AudioService.stop();
+        setPlaybackState(prev => ({ ...prev, isPlaying: false }));
       }
-      
-      const nextTrack = prev.queue[nextIndex];
-      if (nextTrack) {
-        StorageService.saveLastPlayedTrack(nextTrack.id);
-      }
-      return {
-        ...prev,
-        currentTrack: nextTrack,
-        position: 0,
-      };
-    });
+      return;
+    }
+    
+    const nextTrackItem = playbackState.queue[nextIndex];
+    if (nextTrackItem) {
+      await playTrack(nextTrackItem);
+    }
   };
 
-  const previousTrack = () => {
-    setPlaybackState(prev => {
-      const currentIndex = prev.queue.findIndex(t => t.id === prev.currentTrack?.id);
-      const prevIndex = Math.max(0, currentIndex - 1);
-      const prevTrack = prev.queue[prevIndex];
-      if (prevTrack) {
-        StorageService.saveLastPlayedTrack(prevTrack.id);
-      }
-      return {
-        ...prev,
-        currentTrack: prevTrack,
-        position: 0,
-      };
-    });
+  const previousTrack = async () => {
+    const currentIndex = playbackState.queue.findIndex(t => t.id === playbackState.currentTrack?.id);
+    const prevIndex = Math.max(0, currentIndex - 1);
+    const prevTrackItem = playbackState.queue[prevIndex];
+    if (prevTrackItem) {
+      await playTrack(prevTrackItem);
+    }
   };
 
-  const seekTo = (position: number) => {
+  const seekTo = async (position: number) => {
+    await AudioService.seekTo(position * 1000); // Convert to milliseconds
     setPlaybackState(prev => ({ ...prev, position }));
   };
 

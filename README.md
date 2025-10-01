@@ -4,7 +4,13 @@ A cross-platform mobile application for iOS and Android that allows users to cre
 
 ## Features
 
-### Library Management
+### 🔐 Authentication
+- **Google OAuth Sign-In**: Secure login with your Google account
+- **YouTube API Access**: Full access to YouTube content with proper authentication
+- **Guest Mode**: Limited functionality for users who prefer not to sign in
+- **Profile Management**: View account information and sign out
+
+### 📚 Library Management
 - **Three-tab library view:**
   - **Tracks Tab**: View all tracks sorted by name with search functionality
   - **Authors Tab**: Browse all artists in your library
@@ -13,28 +19,32 @@ A cross-platform mobile application for iOS and Android that allows users to cre
 - Shuffle Play All functionality
 - Color-coded tracks (library tracks shown differently)
 
-### Track Discovery
-- Search for tracks and authors on YouTube
+### 🔍 Track Discovery
+- **Real YouTube Integration**: Search for tracks and authors using YouTube Data API
+- **OAuth-Authenticated Search**: Access your YouTube playlists and history
 - View search history (last 10 searches)
 - Search results display tracks with clear indicators for already downloaded content
 - Multi-select from search results
 - Add tracks to library or playlists directly from search
 
-### Playback
+### 🎵 Playback
+- **Real Audio Playback**: Play audio using Expo AV
+- **Background Audio**: Continue playback when app is in background
 - Full playback control (Play, Pause, Next, Previous)
 - Queue management with visual display
 - Shuffle and repeat modes
 - Progress tracking with seek functionality
 - Auto-start from last played track
 - Automatic playlist reshuffling when repeat is enabled
+- Real-time playback status updates
 
-### Author Details
+### 👤 Author Details
 - View all tracks by a specific author
 - Sort by name or date
 - Search within author's tracks
 - Multi-select and action controls
 
-### Playlist Management
+### 📝 Playlist Management
 - Create custom playlists
 - Add tracks to playlists
 - View playlist contents
@@ -47,7 +57,9 @@ A cross-platform mobile application for iOS and Android that allows users to cre
 - **Navigation**: React Navigation (Stack and Bottom Tabs)
 - **State Management**: React Context API
 - **Storage**: AsyncStorage for local data persistence
-- **Audio Playback**: Expo AV (ready for integration)
+- **Audio Playback**: Expo AV with background audio support
+- **Authentication**: Google OAuth 2.0 with expo-auth-session
+- **YouTube Integration**: YouTube Data API v3 with OAuth scopes
 
 ## Project Structure
 
@@ -57,18 +69,25 @@ src/
 │   ├── TrackItem.tsx
 │   └── ActionBar.tsx
 ├── screens/         # Application screens
+│   ├── LoginScreen.tsx
 │   ├── LibraryScreen.tsx
 │   ├── AddTracksScreen.tsx
 │   ├── NowPlayingScreen.tsx
 │   ├── AuthorDetailScreen.tsx
-│   └── PlaylistDetailScreen.tsx
+│   ├── PlaylistDetailScreen.tsx
+│   └── SettingsScreen.tsx
 ├── contexts/        # React Context providers
 │   └── MusicContext.tsx
 ├── services/        # Business logic and API services
+│   ├── AuthService.ts
+│   ├── AudioService.ts
 │   ├── StorageService.ts
-│   └── YouTubeService.ts
+│   ├── YouTubeService.ts
+│   └── DownloadService.ts
 ├── models/          # TypeScript interfaces and types
 │   └── Track.ts
+├── config/          # Application configuration
+│   └── AppConfig.ts
 └── navigation/      # Navigation configuration
     └── AppNavigator.tsx
 ```
@@ -94,7 +113,16 @@ cd yt2700
 npm install --legacy-peer-deps
 ```
 
-3. Start the development server:
+3. Set up environment variables:
+```bash
+cp .env.example .env
+# Edit .env and add your credentials:
+# - YOUTUBE_API_KEY: Get from Google Cloud Console
+# - EXPO_PUBLIC_GOOGLE_CLIENT_ID: OAuth client ID
+# - EXPO_PUBLIC_GOOGLE_CLIENT_SECRET: OAuth client secret
+```
+
+4. Start the development server:
 ```bash
 npm start
 ```
