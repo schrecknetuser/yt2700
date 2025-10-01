@@ -27,6 +27,7 @@ const LibraryScreen = () => {
     toggleTrackSelection,
     clearSelection,
     playTracks,
+    createPlaylist,
   } = useMusic();
 
   const [activeTab, setActiveTab] = useState<'tracks' | 'authors' | 'playlists'>('tracks');
@@ -130,25 +131,49 @@ const LibraryScreen = () => {
     />
   );
 
+  const handleCreatePlaylist = () => {
+    Alert.prompt(
+      'New Playlist',
+      'Enter playlist name:',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Create',
+          onPress: async (name?: string) => {
+            if (name && name.trim()) {
+              await createPlaylist(name.trim());
+            }
+          },
+        },
+      ],
+      'plain-text'
+    );
+  };
+
   const renderPlaylistsTab = () => (
-    <FlatList
-      data={playlists}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
-        <TouchableOpacity
-          style={styles.listItem}
-          onPress={() => handlePlaylistPress(item.id)}
-        >
-          <Text style={styles.listItemText}>{item.name}</Text>
-          <Text style={styles.listItemSubtext}>
-            {item.trackIds.length} tracks
-          </Text>
-        </TouchableOpacity>
-      )}
-      ListEmptyComponent={
-        <Text style={styles.emptyText}>No playlists created</Text>
-      }
-    />
+    <View style={{ flex: 1 }}>
+      <TouchableOpacity style={styles.createButton} onPress={handleCreatePlaylist}>
+        <Text style={styles.createButtonText}>+ Create New Playlist</Text>
+      </TouchableOpacity>
+      <FlatList
+        data={playlists}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.listItem}
+            onPress={() => handlePlaylistPress(item.id)}
+          >
+            <Text style={styles.listItemText}>{item.name}</Text>
+            <Text style={styles.listItemSubtext}>
+              {item.trackIds.length} tracks
+            </Text>
+          </TouchableOpacity>
+        )}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>No playlists created</Text>
+        }
+      />
+    </View>
   );
 
   return (
@@ -250,6 +275,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   shuffleButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  createButton: {
+    backgroundColor: '#4CAF50',
+    padding: 16,
+    margin: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  createButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',

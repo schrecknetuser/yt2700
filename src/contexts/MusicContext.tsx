@@ -60,14 +60,29 @@ export const MusicProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }, []);
 
   const loadData = async () => {
-    const [loadedTracks, loadedAuthors, loadedPlaylists] = await Promise.all([
+    const [loadedTracks, loadedAuthors, loadedPlaylists, lastPlayedId] = await Promise.all([
       StorageService.getTracks(),
       StorageService.getAuthors(),
       StorageService.getPlaylists(),
+      StorageService.getLastPlayedTrack(),
     ]);
     setTracks(loadedTracks);
     setAuthors(loadedAuthors);
     setPlaylists(loadedPlaylists);
+    
+    // Auto-resume last played track (useful for CarPlay reconnection)
+    if (lastPlayedId && loadedTracks.length > 0) {
+      const lastTrack = loadedTracks.find(t => t.id === lastPlayedId);
+      if (lastTrack) {
+        // Set up the track but don't auto-play on initial app load
+        // This will be used when CarPlay connects
+        setPlaybackState(prev => ({
+          ...prev,
+          currentTrack: lastTrack,
+          queue: [lastTrack],
+        }));
+      }
+    }
   };
 
   const addTrack = async (track: Track) => {
