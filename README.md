@@ -186,5 +186,11 @@ Test CarPlay integration using:
 ## License
 Copyright © 2024. All rights reserved.
 
+## Documentation
+
+- **[QUICKSTART.md](QUICKSTART.md)**: Step-by-step guide to get started with the app
+- **[ARCHITECTURE.md](ARCHITECTURE.md)**: Detailed technical architecture and design
+- **[TODO.md](TODO.md)**: Comprehensive checklist for implementing YouTube integration
+
 ## Support
 For issues and feature requests, please create an issue in the repository.
