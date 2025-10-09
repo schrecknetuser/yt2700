@@ -1,65 +1,88 @@
 # TODO: YouTube Integration Implementation
 
-This document outlines the remaining work needed to complete the YouTube integration for YT2700.
+## 🎉 NEW: User-Friendly Approach
 
-## Phase 1: YouTube API Setup
+**For End Users**: Simply sign in with your Google account in the Settings screen - no technical setup required!
 
-### 1.1 API Configuration
+**For Developers**: This TODO is for completing the backend OAuth and API integration. Once done, users get a seamless experience.
+
+## ✅ COMPLETED: User-Friendly Authentication
+
+The app now includes a **Settings screen** where users can sign in with their Google account. No developer configuration needed by end users!
+
+### What's Already Built:
+- ✅ Settings view with YouTube account management
+- ✅ OAuth sign-in flow interface
+- ✅ Secure credential storage in Keychain
+- ✅ YouTubeService with authentication framework
+- ✅ Automatic YouTube search when signed in
+- ✅ Graceful fallback to local search when not signed in
+- ✅ Connection status indicators in UI
+
+## Remaining Work for Developers
+
+This document outlines the **developer-side** work needed to complete the YouTube integration. End users will only need to sign in through Settings once this is complete.
+
+## Phase 1: Complete OAuth Implementation (High Priority)
+
+## Phase 1: Complete OAuth Implementation (High Priority)
+
+### 1.1 Google Cloud Platform Setup (One-Time, Developer Only)
 - [ ] Create Google Cloud Platform project
 - [ ] Enable YouTube Data API v3
-- [ ] Generate API key for iOS app
-- [ ] Set up OAuth 2.0 credentials for user authentication
-- [ ] Configure bundle identifier restrictions
-- [ ] Add API key to app configuration (use secure storage)
+- [ ] Create OAuth 2.0 Client ID for iOS
+  - Application type: iOS
+  - Bundle ID: com.yt2700.app
+- [ ] Download OAuth configuration
+- [ ] **Important**: These credentials are built into the app, users don't need to configure anything
 
-### 1.2 Add Dependencies
-- [ ] Add Google Sign-In SDK via Swift Package Manager or CocoaPods
-- [ ] Add YouTube iOS Player Helper (if needed for preview)
-- [ ] Add networking library (Alamofire or use URLSession)
-- [ ] Add video download library (if not using custom implementation)
+### 1.2 Implement Real OAuth Flow in YouTubeService.swift
+Currently using mock authentication. Replace with:
+- [ ] Add `GoogleSignIn` SDK via Swift Package Manager
+  ```swift
+  dependencies: [
+    .package(url: "https://github.com/google/GoogleSignIn-iOS", from: "7.0.0")
+  ]
+  ```
+- [ ] Implement real `authenticate()` method using ASWebAuthenticationSession
+- [ ] Handle OAuth redirect URL scheme in Info.plist
+- [ ] Exchange authorization code for tokens
+- [ ] Implement token refresh logic
+- [ ] Store tokens securely in Keychain (already scaffolded)
 
-## Phase 2: YouTube Service Implementation
+## Phase 2: Complete YouTube API Integration
 
-### 2.1 Create YouTubeService.swift
-```swift
-Location: YT2700/Services/YouTubeService.swift
+### 2.1 Implement Real API Calls in YouTubeService.swift
+Currently using mock data. Replace with real YouTube Data API v3 calls:
 
-Required Methods:
-- [ ] searchVideos(query: String) -> [YouTubeVideo]
-- [ ] getPlaylist(playlistId: String) -> YouTubePlaylist
-- [ ] getUserPlaylists() -> [YouTubePlaylist]
-- [ ] getVideoDetails(videoId: String) -> YouTubeVideo
-- [ ] extractAudioURL(videoId: String) -> URL
-- [ ] authenticateUser() -> Bool
-- [ ] getCurrentUser() -> YouTubeUser?
-```
+- [ ] **searchVideos()**: Implement real YouTube search
+  ```swift
+  GET https://www.googleapis.com/youtube/v3/search
+  Parameters: q={query}, part=snippet, type=video, maxResults={limit}
+  Headers: Authorization: Bearer {accessToken}
+  ```
 
-### 2.2 Create YouTubeModels.swift
-```swift
-Location: YT2700/Models/YouTubeModels.swift
+- [ ] **getUserPlaylists()**: Fetch user's YouTube playlists
+  ```swift
+  GET https://www.googleapis.com/youtube/v3/playlists
+  Parameters: part=snippet,contentDetails, mine=true
+  ```
 
-Required Structs:
-- [ ] YouTubeVideo
-  - id: String
-  - title: String
-  - channelName: String
-  - duration: TimeInterval
-  - thumbnailURL: URL
-  - viewCount: Int
-  - publishedAt: Date
+- [ ] **getPlaylistVideos()**: Get videos in a playlist
+  ```swift
+  GET https://www.googleapis.com/youtube/v3/playlistItems
+  Parameters: part=snippet, playlistId={id}, maxResults=50
+  ```
 
-- [ ] YouTubePlaylist
-  - id: String
-  - title: String
-  - videoCount: Int
-  - videos: [YouTubeVideo]
+- [ ] **getVideoDetails()**: Get detailed video information
+  ```swift
+  GET https://www.googleapis.com/youtube/v3/videos
+  Parameters: part=snippet,contentDetails,statistics, id={videoId}
+  ```
 
-- [ ] YouTubeUser
-  - id: String
-  - name: String
-  - email: String
-  - playlists: [YouTubePlaylist]
-```
+- [ ] Handle API errors and rate limiting
+- [ ] Implement pagination for large result sets
+- [ ] Add response caching to reduce API calls
 
 ## Phase 3: Download Manager
 

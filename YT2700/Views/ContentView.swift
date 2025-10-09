@@ -19,6 +19,11 @@ struct ContentView: View {
                 .tabItem {
                     Label("Now Playing", systemImage: "play.circle.fill")
                 }
+            
+            SettingsView()
+                .tabItem {
+                    Label("Settings", systemImage: "gear")
+                }
         }
         .onAppear {
             audioPlayer.restoreLastPlayback()

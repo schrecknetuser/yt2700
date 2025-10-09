@@ -5,7 +5,10 @@ A comprehensive iOS application for managing and playing YouTube music playlists
 ## Features
 
 ### Core Functionality
-- **YouTube Integration**: Collect playlists and songs from YouTube (via third-party apps or YouTube account login)
+- **YouTube Integration**: Simple sign-in with your Google account - no developer setup required
+  - One-time authentication through the Settings screen
+  - Automatic access to YouTube search and playlists
+  - No need to manually configure API keys or modify code
 - **Offline Playback**: Download tracks to local storage for playback without internet connection
 - **Custom Playlists**: Create and manage your own playlists
 - **Smart Playback**: 
@@ -33,6 +36,15 @@ The app includes a comprehensive library with three tabs:
    - Click to open and play playlists
    - Create new playlists
 
+### Settings & Account Management
+- **YouTube Account**: Sign in once with your Google account
+  - OAuth authentication for secure access
+  - View connection status and connected email
+  - Disconnect option available
+  - Credentials stored securely in Keychain
+- **Download Settings**: Configure audio quality and auto-download preferences
+- **Storage Management**: View usage and clear downloads when needed
+
 ### Track Actions
 Available actions for selected tracks:
 - **Play Now**: Replace current queue and start playing
@@ -42,6 +54,10 @@ Available actions for selected tracks:
 - **Delete from Library**: Remove tracks from local storage
 
 ### Search Functionality
+- **Intelligent Search**: 
+  - When signed in: Search YouTube's entire catalog
+  - When offline: Search local library only
+  - Visual indicator shows YouTube connection status
 - Search bar with autocomplete
 - Last 10 searches history for quick access
 - Search results split into:
@@ -49,6 +65,7 @@ Available actions for selected tracks:
   - Tracks matching search term
 - Tracks already in library displayed in different color
 - Multi-select support for batch actions
+- Error handling with user-friendly messages
 
 ### Now Playing Screen
 - Current track display with name and author

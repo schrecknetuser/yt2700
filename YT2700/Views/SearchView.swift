@@ -9,7 +9,10 @@ struct SearchView: View {
     @State private var showingActionSheet = false
     @State private var showingPlaylistPicker = false
     @State private var hasSearched = false
+    @State private var isSearching = false
+    @State private var errorMessage: String?
     @EnvironmentObject var audioPlayer: AudioPlayerService
+    @EnvironmentObject var youtubeService: YouTubeService
     
     var body: some View {
         NavigationView {
@@ -17,7 +20,44 @@ struct SearchView: View {
                 SearchBar(text: $searchText, placeholder: "Search for tracks or authors...")
                     .padding(.top)
                 
-                if !hasSearched && searchHistory.isEmpty {
+                if !youtubeService.isAuthenticated {
+                    HStack {
+                        Image(systemName: "exclamationmark.triangle")
+                            .foregroundColor(.orange)
+                        Text("Sign in to YouTube in Settings to search online")
+                            .font(.caption)
+                    }
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
+                    .background(Color.orange.opacity(0.1))
+                    .cornerRadius(8)
+                    .padding(.horizontal)
+                }
+                
+                if let error = errorMessage {
+                    HStack {
+                        Image(systemName: "exclamationmark.circle")
+                            .foregroundColor(.red)
+                        Text(error)
+                            .font(.caption)
+                    }
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
+                    .background(Color.red.opacity(0.1))
+                    .cornerRadius(8)
+                    .padding(.horizontal)
+                }
+                
+                if isSearching {
+                    VStack {
+                        ProgressView()
+                        Text("Searching YouTube...")
+                            .foregroundColor(.gray)
+                            .font(.caption)
+                    }
+                    .padding()
+                    Spacer()
+                } else if !hasSearched && searchHistory.isEmpty {
                     Text("Enter a search term to find tracks and authors")
                         .foregroundColor(.gray)
                         .padding()
@@ -124,40 +164,64 @@ struct SearchView: View {
     
     func performSearch(_ query: String) {
         hasSearched = true
+        isSearching = true
+        errorMessage = nil
         
         PersistenceController.shared.addSearchHistory(query)
         loadSearchHistory()
         
+        // If YouTube is connected, search YouTube
+        // Otherwise, search local library only
+        if youtubeService.isAuthenticated {
+            Task {
+                do {
+                    let videos = try await youtubeService.searchVideos(query: query, maxResults: 25)
+                    let existingTracks = PersistenceController.shared.fetchTracks()
+                    let existingYouTubeIDs = Set(existingTracks.compactMap { $0.youtubeID })
+                    
+                    await MainActor.run {
+                        searchResults = videos.map { video in
+                            var track = video.toTrack()
+                            track.inLibrary = existingYouTubeIDs.contains(video.id)
+                            return track
+                        }
+                        
+                        let authorNames = Set(searchResults.map { $0.authorName })
+                        searchAuthors = authorNames.map { name in
+                            let count = searchResults.filter { $0.authorName == name }.count
+                            return Author(name: name, trackCount: count)
+                        }.sorted { $0.name < $1.name }
+                        
+                        isSearching = false
+                    }
+                } catch {
+                    await MainActor.run {
+                        errorMessage = error.localizedDescription
+                        isSearching = false
+                        // Fall back to local search
+                        searchLocalLibrary(query: query)
+                    }
+                }
+            }
+        } else {
+            // Search local library only
+            searchLocalLibrary(query: query)
+            isSearching = false
+        }
+    }
+    
+    func searchLocalLibrary(query: String) {
         let allTracks = PersistenceController.shared.fetchTracks()
-        searchResults = generateMockSearchResults(query: query, existingTracks: allTracks)
+        searchResults = allTracks.filter {
+            $0.name.localizedCaseInsensitiveContains(query) ||
+            $0.authorName.localizedCaseInsensitiveContains(query)
+        }
         
         let authorNames = Set(searchResults.map { $0.authorName })
         searchAuthors = authorNames.map { name in
             let count = searchResults.filter { $0.authorName == name }.count
             return Author(name: name, trackCount: count)
         }.filter { $0.name.localizedCaseInsensitiveContains(query) }
-        
-        searchResults = searchResults.filter { $0.name.localizedCaseInsensitiveContains(query) }
-    }
-    
-    func generateMockSearchResults(query: String, existingTracks: [Track]) -> [Track] {
-        var results: [Track] = []
-        let existingIDs = Set(existingTracks.map { $0.id })
-        
-        for i in 1...10 {
-            let trackID = UUID()
-            let track = Track(
-                id: trackID,
-                name: "Track \(i) - \(query)",
-                authorName: "Artist \(i % 3 + 1)",
-                duration: Double.random(in: 120...300),
-                youtubeID: "yt_\(trackID.uuidString.prefix(8))",
-                inLibrary: existingIDs.contains(trackID)
-            )
-            results.append(track)
-        }
-        
-        return results
     }
     
     func toggleSelection(_ id: UUID) {
